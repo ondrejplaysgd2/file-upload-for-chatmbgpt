@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>File Hosting</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #171717;
+            color: white;
+        }
+
+        a {
+            color: #70aaff;
+        }
+
+        li {
+            margin: 12px 0;
+        }
+
+        .error {
+            color: #ff7777;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>File Hosting</h1>
+
+    <div id="status">Loading files...</div>
+    <ul id="file-list"></ul>
+
+    <script>
+        const params = new URLSearchParams(
+            window.location.search
+        );
+
+        const fileName = params.get("file_name");
+        const download = params.get("download") === "true";
+
+        async function main() {
+            const status = document.getElementById("status");
+            const list = document.getElementById("file-list");
+
+            try {
+                const response = await fetch("./files.json");
+
+                if (!response.ok) {
+                    throw new Error("Could not load files.json");
+                }
+
+                const files = await response.json();
+
+                // Handle direct file requests
+                if (fileName) {
+                    if (!files.includes(fileName)) {
+                        throw new Error("File not found!");
+                    }
+
+                    const url = "./" + encodeURIComponent(fileName);
+
+                    if (download) {
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    } else {
+                        window.location.href = url;
+                    }
+
+                    return;
+                }
+
+                // Display available files
+                status.textContent = "Available files:";
+
+                for (const file of files) {
+                    const item = document.createElement("li");
+                    const link = document.createElement("a");
+
+                    link.href = "?file_name=" +
+                        encodeURIComponent(file) +
+                        "&download=false";
+
+                    link.textContent = file;
+
+                    item.appendChild(link);
+                    list.appendChild(item);
+                }
+
+            } catch (error) {
+                status.textContent = error.message;
+                status.className = "error";
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
